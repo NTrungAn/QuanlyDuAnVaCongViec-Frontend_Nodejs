@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import TaskBoard from "../components/tasks/TaskBoard";
 
 interface User {
   id: string;
@@ -310,23 +311,8 @@ const ProjectDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Task Placeholder */}
-          <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
-            <div className="bg-gray-50 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Plus className="h-8 w-8 text-gray-300" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Công việc của dự án
-            </h3>
-            <p className="text-gray-500 mb-8 max-w-xs mx-auto">
-              Chưa có công việc nào được tạo trong dự án này. Hãy bắt đầu quản
-              lý ngay!
-            </p>
-            <button className="inline-flex items-center gap-2 bg-gray-900 text-white px-7 py-3 rounded-2xl font-bold hover:bg-black transition-all shadow-xl active:scale-95">
-              <Plus className="h-5 w-5" />
-              Thêm công việc mới
-            </button>
-          </div>
+          {/* Task Board */}
+          <TaskBoard projectId={projectId!} projectMembers={project.members} />
         </div>
 
         {/* Right Column: Sidebar */}
