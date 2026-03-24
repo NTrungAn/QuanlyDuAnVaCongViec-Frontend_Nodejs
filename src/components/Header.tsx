@@ -3,14 +3,13 @@ import {
   LogOut,
   Layout as LayoutIcon,
   User,
-  Bell,
   LogIn,
   UserPlus,
 } from "lucide-react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import NotificationBell from "./NotificationBell";
 
 const Header: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const userJson = localStorage.getItem("user");
   const user = userJson ? JSON.parse(userJson) : null;
@@ -66,10 +65,7 @@ const Header: React.FC = () => {
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
               <>
-                <button className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-all relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
-                </button>
+                <NotificationBell />
 
                 <div className="h-8 w-px bg-gray-200 mx-2 hidden sm:block"></div>
 
