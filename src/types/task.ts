@@ -22,8 +22,8 @@ export interface Task {
     email: string;
     avatarUrl?: string;
   };
-  sprint?: string;
-  epic?: string;
+  sprint?: string | null;
+  epic?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -36,8 +36,8 @@ export interface CreateTaskDTO {
   dueDate?: string;
   project: string; // required
   assignee?: string; // User ID
-  sprint?: string;
-  epic?: string;
+  sprint?: string | null;
+  epic?: string | null;
 }
 
 export interface UpdateTaskDTO {

@@ -22,6 +22,7 @@ interface TaskFormModalProps {
   sprints: Sprint[];
   epics: Epic[];
   isSubmitting: boolean;
+  defaultEpicId?: string | null;
 }
 
 const TaskFormModal: React.FC<TaskFormModalProps> = ({
@@ -34,7 +35,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   projectMembers,
   sprints,
   epics,
-  isSubmitting
+  isSubmitting,
+  defaultEpicId
 }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -69,10 +71,10 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
         dueDate: "",
         assignee: "",
         sprint: "",
-        epic: "",
+        epic: defaultEpicId || "",
       });
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, defaultEpicId]);
 
   if (!isOpen) return null;
 

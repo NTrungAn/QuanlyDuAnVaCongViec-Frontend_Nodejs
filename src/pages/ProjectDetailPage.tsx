@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  ArrowLeft,
   Calendar,
   Users,
   Settings,
@@ -8,7 +7,6 @@ import {
   Trash2,
   Edit3,
   Clock,
-  CheckCircle2,
   Layout,
   UserPlus,
   Search,
@@ -80,11 +78,9 @@ const ProjectDetailPage: React.FC = () => {
   const currentUserJson = localStorage.getItem("user");
   const currentUser = currentUserJson ? JSON.parse(currentUserJson) : null;
 
-  // Logic kiểm tra quyền sở hữu cực kỳ mạnh mẽ
   const currentUserId = String(currentUser?.id || currentUser?._id || "");
   const projectOwnerId = String(
     project?.owner?.id ||
-      project?.owner?.id ||
       (typeof project?.owner === "string" ? project.owner : ""),
   );
 
@@ -151,7 +147,6 @@ const ProjectDetailPage: React.FC = () => {
     setSearching(true);
     try {
       const response = await api.get(`/users/search?q=${q}`);
-      // Lọc bỏ những người đã là thành viên (so sánh ID an toàn hơn)
       const currentMemberIds =
         project?.members.map((m) => String(m.id || m.id)) || [];
       const filteredResults = response.data.filter((u: any) => {
@@ -171,7 +166,7 @@ const ProjectDetailPage: React.FC = () => {
       await api.post(`/projects/${projectId}/members`, { memberId: userId });
       setShowAddMember(false);
       setSearchQuery("");
-      fetchProject(); // Refresh project data
+      fetchProject();
     } catch (err: any) {
       alert(err.response?.data?.message || "Không thể thêm thành viên.");
     }
@@ -183,7 +178,7 @@ const ProjectDetailPage: React.FC = () => {
       await api.delete(`/projects/${projectId}/members`, {
         data: { memberId: userId },
       });
-      fetchProject(); // Refresh project data
+      fetchProject();
     } catch (err: any) {
       alert(err.response?.data?.message || "Không thể xóa thành viên.");
     }
@@ -219,111 +214,59 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-6 px-4">
-      {/* Top Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-        <Link
-          to="/projects"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 font-semibold transition-colors group"
-        >
-          <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-          Danh sách dự án
-        </Link>
-
-        {isOwner && (
-          <div className="flex items-center gap-3">
-            <Link
-              to={`/projects/${project.id}/edit`}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-200 transition-all shadow-sm"
-            >
-              <Edit3 className="h-4 w-4 text-blue-600" />
-              Chỉnh sửa
-            </Link>
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 hover:border-red-200 transition-all shadow-sm"
-            >
-              <Trash2 className="h-4 w-4" />
-              {isDeleting ? "Đang xóa..." : "Xóa dự án"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Left Column: Main Project Info */}
-        <div className="lg:col-span-2 space-y-10">
-          {/* Project Title Card */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Layout className="h-32 w-32" />
+    /* THAY ĐỔI 1: Bỏ max-w-6xl, dùng w-full để tràn viền màn hình */
+    <div className="w-full mx-auto py-6 px-4 lg:px-8">
+      {/* THAY ĐỔI 2: Đổi tỉ lệ grid thành xl:grid-cols-4 để cột trái rộng hơn */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
+        {/* Left Column: Cột chính chứa Project Info và Kanban, chiếm 3/4 màn hình trên desktop rộng */}
+        <div className="xl:col-span-3 space-y-4 flex flex-col min-w-0">
+          {/* Project Title Card  */}
+          <div className="bg-white border border-gray-200 rounded-lg p-3 sm:px-4 sm:py-3 shadow-sm relative overflow-hidden shrink-0">
+            {/* Icon nền mờ thu nhỏ */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-2 opacity-[0.03] pointer-events-none">
+              <Layout className="h-12 w-12" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 mb-8">
+            {/* Hàng 1: Tiêu đề + Trạng thái + Ngày tạo (Nằm chung 1 dòng) */}
+            <div className="flex flex-wrap items-center gap-3 mb-1 pr-12">
+              <h1 className="text-lg font-bold text-[#172B4D] leading-none">
+                {project.name}
+              </h1>
               <span
-                className={`text-[10px] font-black px-3.5 py-1.5 rounded-full border uppercase tracking-[0.1em] ${statusConfig[project.status].color}`}
+                className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${statusConfig[project.status].color}`}
               >
                 {statusConfig[project.status].label}
               </span>
-              <span className="flex items-center gap-1.5 text-xs text-gray-400 font-bold bg-gray-50 px-3.5 py-1.5 rounded-full border border-gray-100">
-                <Clock className="h-3.5 w-3.5" />
-                Đã tạo:{" "}
+              <span className="flex items-center gap-1 text-[10px] text-gray-500 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
+                <Clock className="h-3 w-3" />
                 {new Date(project.createdAt).toLocaleDateString("vi-VN")}
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-6">
-              {project.name}
-            </h1>
-
-            <div className="h-1 w-20 bg-blue-600 rounded-full mb-8"></div>
-
-            <p className="text-gray-600 text-lg leading-relaxed whitespace-pre-wrap">
+            {/* Hàng 2: Mô tả dự án */}
+            <p className="text-[#5E6C84] text-[13px] leading-relaxed whitespace-pre-wrap pr-12 truncate">
               {project.description || "Dự án này chưa có mô tả chi tiết."}
             </p>
           </div>
 
-          {/* Statistics Section */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-3xl border border-blue-100/50 flex items-center gap-6 group transition-all hover:shadow-lg hover:shadow-blue-500/5">
-              <div className="bg-blue-600 p-4 rounded-2xl shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform">
-                <Layout className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-blue-900/60 uppercase tracking-widest mb-1">
-                  Tiến độ
-                </p>
-                <p className="text-3xl font-black text-blue-600">0%</p>
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-3xl border border-green-100/50 flex items-center gap-6 group transition-all hover:shadow-lg hover:shadow-green-500/5">
-              <div className="bg-green-600 p-4 rounded-2xl shadow-xl shadow-green-500/20 group-hover:scale-110 transition-transform">
-                <CheckCircle2 className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-green-900/60 uppercase tracking-widest mb-1">
-                  Hoàn thành
-                </p>
-                <p className="text-3xl font-black text-green-600">0/0</p>
-              </div>
-            </div>
-          </div>
-
           {/* Task Board */}
-          <TaskBoard projectId={projectId!} projectMembers={project.members} />
+          <div className="flex-1 overflow-hidden min-h-[500px]">
+            <TaskBoard
+              projectId={projectId!}
+              projectMembers={project.members}
+            />
+          </div>
         </div>
 
-        {/* Right Column: Sidebar */}
-        <div className="space-y-8">
+        {/* Right Column: Sidebar - Chuyển xuống chiếm 1/4 màn hình */}
+        <div className="xl:col-span-1 space-y-6">
           {/* Timeframe Card */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-600" /> Thời gian dự án
             </h3>
-            <div className="space-y-6">
-              <div className="flex gap-4">
+            <div className="space-y-5">
+              <div className="flex gap-3">
                 <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
                   <Calendar className="h-5 w-5 text-blue-600" />
                 </div>
@@ -335,24 +278,24 @@ const ProjectDetailPage: React.FC = () => {
                     {project.startDate
                       ? new Date(project.startDate).toLocaleDateString(
                           "vi-VN",
-                          { dateStyle: "full" },
+                          { dateStyle: "long" },
                         )
                       : "Chưa xác định"}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 <div className="h-10 w-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0">
                   <Clock className="h-5 w-5 text-orange-600" />
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">
-                    Kết thúc dự kiến
+                    Kết thúc
                   </p>
                   <p className="text-sm font-bold text-gray-900">
                     {project.endDate
                       ? new Date(project.endDate).toLocaleDateString("vi-VN", {
-                          dateStyle: "full",
+                          dateStyle: "long",
                         })
                       : "Chưa xác định"}
                   </p>
@@ -362,57 +305,54 @@ const ProjectDetailPage: React.FC = () => {
           </div>
 
           {/* Team Members Card */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-600" /> Thành viên (
+                <Users className="h-4 w-4 text-blue-600" /> Nhóm (
                 {project.members?.length || 0})
               </h3>
               {isOwner && (
                 <div className="relative" ref={searchRef}>
                   <button
                     onClick={() => setShowAddMember(!showAddMember)}
-                    className={`p-2 rounded-xl transition-all ${showAddMember ? "bg-blue-600 text-white shadow-lg" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
+                    className={`p-1.5 rounded-lg transition-all ${showAddMember ? "bg-blue-600 text-white shadow-md" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}
                   >
                     <UserPlus className="h-4 w-4" />
                   </button>
 
                   {showAddMember && (
-                    <div className="absolute right-0 mt-3 w-72 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 p-4 animate-in fade-in slide-in-from-top-2">
-                      <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <div className="absolute right-0 mt-3 w-72 bg-white border border-gray-100 rounded-xl shadow-xl z-50 p-3">
+                      <div className="relative mb-3">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                         <input
                           autoFocus
                           type="text"
-                          placeholder="Tìm theo tên hoặc email..."
+                          placeholder="Tìm email..."
                           value={searchQuery}
                           onChange={(e) => handleSearchUsers(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                          className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-100 rounded-lg text-sm outline-none focus:border-blue-500"
                         />
                       </div>
 
-                      <div className="space-y-1 max-h-[240px] overflow-y-auto custom-scrollbar">
+                      <div className="space-y-1 max-h-[200px] overflow-y-auto custom-scrollbar">
                         {searching ? (
-                          <div className="p-4 text-center text-xs text-gray-400">
-                            Đang tìm kiếm...
+                          <div className="p-3 text-center text-xs text-gray-400">
+                            Đang tìm...
                           </div>
                         ) : searchResults.length === 0 ? (
-                          <div className="p-4 text-center text-xs text-gray-400">
+                          <div className="p-3 text-center text-xs text-gray-400">
                             {searchQuery.length < 2
                               ? "Nhập ít nhất 2 ký tự"
-                              : "Không tìm thấy kết quả"}
+                              : "Không có kết quả"}
                           </div>
                         ) : (
                           searchResults.map((u) => (
                             <button
                               key={u.id}
                               onClick={() => handleAddMember(u.id)}
-                              className="w-full flex items-center gap-3 p-2 hover:bg-blue-50 rounded-xl transition-colors group text-left"
+                              className="w-full flex items-center justify-between p-2 hover:bg-blue-50 rounded-lg text-left group"
                             >
-                              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-[10px] font-bold text-blue-600">
-                                {u.fullName.substring(0, 2).toUpperCase()}
-                              </div>
-                              <div className="flex-grow min-w-0">
+                              <div className="flex-grow min-w-0 pr-2">
                                 <p className="text-sm font-bold text-gray-900 truncate">
                                   {u.fullName}
                                 </p>
@@ -420,9 +360,7 @@ const ProjectDetailPage: React.FC = () => {
                                   {u.email}
                                 </p>
                               </div>
-                              <div className="bg-blue-600 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Plus className="h-3 w-3" />
-                              </div>
+                              <Plus className="h-4 w-4 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                             </button>
                           ))
                         )}
@@ -433,9 +371,9 @@ const ProjectDetailPage: React.FC = () => {
               )}
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               {project.members?.length === 0 ? (
-                <p className="text-sm text-gray-400 italic text-center py-6">
+                <p className="text-xs text-gray-400 text-center py-4">
                   Chưa có thành viên nào.
                 </p>
               ) : (
@@ -445,58 +383,33 @@ const ProjectDetailPage: React.FC = () => {
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-10 w-10 bg-gradient-to-tr from-gray-100 to-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm group-hover:from-blue-100 group-hover:to-blue-50 transition-all">
-                        <span className="text-gray-500 font-bold text-xs uppercase group-hover:text-blue-600">
+                      <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                        <span className="text-gray-500 font-bold text-[10px] uppercase">
                           {member.fullName?.substring(0, 2)}
                         </span>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-900 leading-none mb-1 group-hover:text-blue-600 transition-colors truncate">
+                        <p className="text-[13px] font-bold text-gray-900 truncate">
                           {member.fullName}
                           {member.id === project.owner?.id && (
                             <span className="ml-1.5 text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
-                              Chủ sở hữu
+                              Chủ
                             </span>
                           )}
-                        </p>
-                        <p className="text-[10px] text-gray-400 truncate">
-                          {member.email}
                         </p>
                       </div>
                     </div>
                     {isOwner && member.id !== project.owner?.id && (
                       <button
                         onClick={() => handleRemoveMember(member.id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        title="Xóa khỏi dự án"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all shrink-0"
                       >
-                        <X className="h-4 w-4" />
+                        <X className="h-3 w-3" />
                       </button>
                     )}
                   </div>
                 ))
               )}
-            </div>
-          </div>
-
-          {/* Owner Info Card */}
-          <div className="bg-gradient-to-br from-gray-900 to-blue-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden group">
-            <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/5 rounded-full group-hover:scale-150 transition-transform duration-700"></div>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-blue-300 mb-6 opacity-60">
-              Chủ quản dự án
-            </p>
-            <div className="flex items-center gap-5">
-              <div className="h-14 w-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
-                <Settings className="h-7 w-7 text-blue-300" />
-              </div>
-              <div>
-                <p className="font-black text-xl leading-none mb-1">
-                  {project.owner?.fullName || "Admin"}
-                </p>
-                <p className="text-xs text-blue-200 opacity-60 tracking-wide font-medium">
-                  Quản trị viên hệ thống
-                </p>
-              </div>
             </div>
           </div>
         </div>
