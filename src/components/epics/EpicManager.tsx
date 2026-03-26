@@ -9,6 +9,7 @@ interface EpicManagerProps {
   isOpen: boolean;
   onClose: () => void;
   onEpicsUpdated?: () => void;
+  onAddTask?: (epicId: string) => void;
 }
 
 const statusColors: Record<EpicStatus, string> = {
@@ -28,6 +29,7 @@ const EpicManager: React.FC<EpicManagerProps> = ({
   isOpen,
   onClose,
   onEpicsUpdated,
+  onAddTask,
 }) => {
   const [epics, setEpics] = useState<Epic[]>([]);
   const [loading, setLoading] = useState(false);
@@ -151,8 +153,19 @@ const EpicManager: React.FC<EpicManagerProps> = ({
                 )}
                 
                 <div className="flex items-center justify-between mt-4">
-                  <div className="font-bold text-xs bg-purple-50 text-purple-600 px-2.5 py-1.5 rounded-lg border border-purple-100">
-                    {epic.tasks?.length || 0} công việc
+                  <div className="flex items-center gap-2">
+                    <div className="font-bold text-xs bg-purple-50 text-purple-600 px-2.5 py-1.5 rounded-lg border border-purple-100">
+                      {epic.tasks?.length || 0} công việc
+                    </div>
+                    {onAddTask && (
+                      <button
+                        onClick={() => onAddTask((epic.id || epic._id) as string)}
+                        className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg border border-purple-100 transition-colors"
+                        title="Thêm công việc vào Epic này"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
