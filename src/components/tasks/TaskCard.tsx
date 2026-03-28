@@ -52,6 +52,32 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onDragStart }) => {
               {(task.sprint as any).name}
             </span>
           )}
+          {task.taskType && (
+            <span
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              style={{
+                backgroundColor: task.taskType.color ? `${task.taskType.color}20` : "#f3f4f6",
+                color: task.taskType.color || "#374151",
+                border: task.taskType.color ? `1px solid ${task.taskType.color}40` : "1px solid #e5e7eb"
+              }}
+            >
+              {task.taskType.name}
+            </span>
+          )}
+          {task.labels && task.labels.map((label: any) => (
+            <span
+              key={label._id || label.id}
+              className="text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1"
+              style={{
+                backgroundColor: `${label.color}15`,
+                color: label.color,
+                border: `1px solid ${label.color}30`
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: label.color }} />
+              {label.name}
+            </span>
+          ))}
         </div>
         <button className="text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 transition-opacity ml-auto">
           <MoreHorizontal className="h-4 w-4" />
@@ -73,7 +99,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick, onDragStart }) => {
           {/* Mock indicators for comments/attachments */}
           <div className="flex items-center gap-1 text-xs">
             <MessageSquare className="h-3 w-3" />
-            <span>0</span>
+            <span>{task.commentsCount || 0}</span>
           </div>
         </div>
 

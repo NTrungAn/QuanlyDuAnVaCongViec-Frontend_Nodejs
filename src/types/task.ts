@@ -24,8 +24,20 @@ export interface Task {
   };
   sprint?: string | null;
   epic?: string | null;
+  labels?: {
+    _id: string;
+    name: string;
+    color: string;
+  }[];
+  taskType?: {
+    _id: string;
+    name: string;
+    icon?: string;
+    color?: string;
+  } | null;
   createdAt?: string;
   updatedAt?: string;
+  commentsCount?: number;
 }
 
 export interface CreateTaskDTO {
@@ -38,6 +50,7 @@ export interface CreateTaskDTO {
   assignee?: string; // User ID
   sprint?: string | null;
   epic?: string | null;
+  labels?: string[];
 }
 
 export interface UpdateTaskDTO {
@@ -49,4 +62,5 @@ export interface UpdateTaskDTO {
   assignee?: string | null;
   sprint?: string | null;
   epic?: string | null;
+  labels?: string[];
 }
