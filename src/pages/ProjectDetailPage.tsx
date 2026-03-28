@@ -2,21 +2,19 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Calendar,
   Users,
-  Settings,
-  Plus,
-  Trash2,
-  Edit3,
+  X,
+  AlertCircle,
+  Loader2,
   Clock,
   Layout,
   UserPlus,
   Search,
-  X,
-  AlertCircle,
-  Loader2,
+  Plus
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import TaskBoard from "../components/tasks/TaskBoard";
+import ProjectStatsView from "../components/projects/ProjectStatsView";
 
 interface User {
   id: string;
@@ -62,11 +60,10 @@ const statusConfig = {
 
 const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams();
-  const navigate = useNavigate();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<"board" | "stats">("board");
 
   // Member management state
   const [showAddMember, setShowAddMember] = useState(false);
@@ -119,25 +116,6 @@ const ProjectDetailPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "Bạn có chắc chắn muốn xóa dự án này? Hành động này không thể hoàn tác.",
-      )
-    ) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      await api.delete(`/projects/${projectId}`);
-      navigate("/projects");
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Không thể xóa dự án.");
-      setIsDeleting(false);
-    }
-  };
-
   const handleSearchUsers = async (q: string) => {
     setSearchQuery(q);
     if (q.length < 2) {
@@ -148,7 +126,7 @@ const ProjectDetailPage: React.FC = () => {
     try {
       const response = await api.get(`/users/search?q=${q}`);
       const currentMemberIds =
-        project?.members.map((m) => String(m.id || m.id)) || [];
+        project?.members.map((m) => String(m.id)) || [];
       const filteredResults = response.data.filter((u: any) => {
         const userId = String(u.id || u._id);
         return !currentMemberIds.includes(userId);
@@ -214,8 +192,7 @@ const ProjectDetailPage: React.FC = () => {
   }
 
   return (
-    /* THAY ĐỔI 1: Bỏ max-w-6xl, dùng w-full để tràn viền màn hình */
-    <div className="w-full mx-auto py-6 px-4 lg:px-8">
+    <div className="w-full mx-auto py-2">
       {/* THAY ĐỔI 2: Đổi tỉ lệ grid thành xl:grid-cols-4 để cột trái rộng hơn */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
         {/* Left Column: Cột chính chứa Project Info và Kanban, chiếm 3/4 màn hình trên desktop rộng */}
@@ -249,12 +226,40 @@ const ProjectDetailPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Task Board */}
+          {/* Tab Navigation */}
+          <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+            <button
+              onClick={() => setActiveTab("board")}
+              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${
+                activeTab === "board"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Bảng công việc
+            </button>
+            <button
+              onClick={() => setActiveTab("stats")}
+              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${
+                activeTab === "stats"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Thống kê & Báo cáo
+            </button>
+          </div>
+
+          {/* Main Content Area */}
           <div className="flex-1 overflow-hidden min-h-[500px]">
-            <TaskBoard
-              projectId={projectId!}
-              projectMembers={project.members}
-            />
+            {activeTab === "board" ? (
+              <TaskBoard
+                projectId={projectId!}
+                projectMembers={project.members}
+              />
+            ) : (
+              <ProjectStatsView projectId={projectId!} />
+            )}
           </div>
         </div>
 
