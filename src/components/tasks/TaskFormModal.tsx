@@ -5,6 +5,8 @@ import { Sprint } from "../../types/sprint";
 import { Epic } from "../../types/epic";
 import { TaskType } from "../../types/taskType";
 import CommentSection from "./CommentSection";
+import AttachmentSection from "./AttachmentSection";
+import SubtaskSection from "./SubtaskSection";
 
 interface User {
   id?: string;
@@ -27,6 +29,7 @@ interface TaskFormModalProps {
   labels: any[];
   isSubmitting: boolean;
   defaultEpicId?: string | null;
+  onEditSubtask?: (task: Task) => void;
 }
 
 const TaskFormModal: React.FC<TaskFormModalProps> = ({
@@ -42,7 +45,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   taskTypes,
   labels,
   isSubmitting,
-  defaultEpicId
+  defaultEpicId,
+  onEditSubtask
 }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -128,8 +132,9 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto custom-scrollbar flex-grow">
-          <div className="space-y-6">
+        <div className="overflow-y-auto custom-scrollbar flex-grow">
+          <form id="task-form" onSubmit={handleSubmit} className="p-6">
+            <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Tên công việc <span className="text-red-500">*</span>
@@ -330,12 +335,26 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               </div>
             </div>
 
-            {/* Integration of Comment Section */}
-            {isEditing && initialData && (
-              <CommentSection taskId={(initialData.id || initialData._id) as string} />
-            )}
-          </div>
-        </form>
+            </div>
+          </form>
+
+          {/* Integration of Comment Section */}
+          {isEditing && initialData && (
+            <div className="px-6 pb-6">
+              <SubtaskSection 
+                taskId={(initialData.id || initialData._id) as string} 
+                projectId={projectId}
+                onEditSubtask={onEditSubtask}
+              />
+              <AttachmentSection 
+                taskId={(initialData.id || initialData._id) as string} 
+              />
+              <CommentSection 
+                taskId={(initialData.id || initialData._id) as string} 
+              />
+            </div>
+          )}
+        </div>
 
         <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-3xl">
           {isEditing && onDelete ? (
@@ -363,7 +382,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               Hủy
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="task-form"
               disabled={isSubmitting || !formData.title.trim()}
               className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
             >

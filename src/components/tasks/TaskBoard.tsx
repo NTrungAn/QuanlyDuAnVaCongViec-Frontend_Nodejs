@@ -931,6 +931,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
         labels={labels}
         isSubmitting={isSubmitting}
         defaultEpicId={activeDefaultEpicId}
+        onEditSubtask={handleOpenEditModal}
       />
       <EpicManager
         projectId={projectId}
