@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Plus, Calendar, Target, Loader2, Play, Edit2, Trash2 } from "lucide-react";
+import { X, Plus, Calendar, Target, Loader2, Play, Edit2, Trash2, Check } from "lucide-react";
 import { Sprint, CreateSprintDTO, SprintStatus } from "../../types/sprint";
 import { getSprintsByProject, createSprint, updateSprint, deleteSprint } from "../../api/sprint.api";
 import SprintFormModal from "./SprintFormModal";
@@ -71,6 +71,25 @@ const SprintManager: React.FC<SprintManagerProps> = ({
       if (onSprintsUpdated) onSprintsUpdated();
     } catch (error: any) {
       alert(error.response?.data?.message || "Không thể xóa Sprint");
+    }
+  };
+
+  const handleStatusUpdate = async (sprintId: string, newStatus: SprintStatus) => {
+    let confirmMsg = "";
+    if (newStatus === "ACTIVE") confirmMsg = "Bạn có muốn bắt đầu Sprint này không? Các công việc thuộc Sprint này sẽ xuất hiện trên bảng Kanban.";
+    if (newStatus === "COMPLETED") confirmMsg = "Bạn có muốn kết thúc Sprint này không? Các công việc chưa hoàn thành sẽ được quay trở lại Backlog.";
+
+    if (confirmMsg && !window.confirm(confirmMsg)) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateSprint(projectId, sprintId, { status: newStatus });
+      fetchSprints();
+      if (onSprintsUpdated) onSprintsUpdated();
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Không thể cập nhật trạng thái Sprint");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,6 +178,26 @@ const SprintManager: React.FC<SprintManagerProps> = ({
                 
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
                   <div className="flex items-center gap-2">
+                    {sprint.status === "PLANNED" && (
+                      <button
+                        onClick={() => handleStatusUpdate((sprint.id || sprint._id) as string, "ACTIVE")}
+                        disabled={isSubmitting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        <Play className="h-3 w-3 fill-current" />
+                        Bắt đầu
+                      </button>
+                    )}
+                    {sprint.status === "ACTIVE" && (
+                      <button
+                        onClick={() => handleStatusUpdate((sprint.id || sprint._id) as string, "COMPLETED")}
+                        disabled={isSubmitting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        <Check className="h-3 w-3" />
+                        Kết thúc
+                      </button>
+                    )}
                     <button
                       onClick={() => handleOpenEditForm(sprint)}
                       className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
@@ -174,7 +213,7 @@ const SprintManager: React.FC<SprintManagerProps> = ({
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="font-bold bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-lg border border-blue-100">
+                  <div className="font-bold bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-lg border border-blue-100 text-xs">
                     {sprint.tasks?.length || 0} công việc
                   </div>
                 </div>

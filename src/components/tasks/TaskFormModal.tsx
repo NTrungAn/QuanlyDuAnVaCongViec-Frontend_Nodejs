@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Tag, Check } from "lucide-react";
 import { Task, CreateTaskDTO, UpdateTaskDTO, TaskStatus, TaskPriority } from "../../types/task";
 import { Sprint } from "../../types/sprint";
 import { Epic } from "../../types/epic";
+import { TaskType } from "../../types/taskType";
+import CommentSection from "./CommentSection";
+import AttachmentSection from "./AttachmentSection";
+import SubtaskSection from "./SubtaskSection";
 
 interface User {
   id?: string;
@@ -21,7 +25,11 @@ interface TaskFormModalProps {
   projectMembers: User[];
   sprints: Sprint[];
   epics: Epic[];
+  taskTypes: TaskType[];
+  labels: any[];
   isSubmitting: boolean;
+  defaultEpicId?: string | null;
+  onEditSubtask?: (task: Task) => void;
 }
 
 const TaskFormModal: React.FC<TaskFormModalProps> = ({
@@ -34,7 +42,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   projectMembers,
   sprints,
   epics,
-  isSubmitting
+  taskTypes,
+  labels,
+  isSubmitting,
+  defaultEpicId,
+  onEditSubtask
 }) => {
   const [formData, setFormData] = useState({
     title: "",
@@ -45,6 +57,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
     assignee: "",
     sprint: "",
     epic: "",
+    taskType: "",
+    labels: [] as string[],
   });
 
   useEffect(() => {
@@ -58,6 +72,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
         assignee: initialData.assignee?._id || "",
         sprint: (initialData.sprint as any)?._id || (initialData.sprint as any)?.id || "",
         epic: (initialData.epic as any)?._id || (initialData.epic as any)?.id || "",
+        taskType: (initialData.taskType as any)?._id || (initialData.taskType as any)?.id || "",
+        labels: (initialData.labels || []).map((l: any) => l._id || l.id || l),
       });
     } else if (isOpen) {
       // Reset form on open
@@ -69,10 +85,12 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
         dueDate: "",
         assignee: "",
         sprint: "",
-        epic: "",
+        epic: defaultEpicId || "",
+        taskType: "",
+        labels: [],
       });
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, defaultEpicId]);
 
   if (!isOpen) return null;
 
@@ -88,6 +106,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
       ...(formData.assignee ? { assignee: formData.assignee } : { assignee: null }),
       ...(formData.sprint ? { sprint: formData.sprint } : { sprint: null }),
       ...(formData.epic ? { epic: formData.epic } : { epic: null }),
+      ...(formData.taskType ? { taskType: formData.taskType } : { taskType: null }),
+      labels: formData.labels,
     };
 
     onSubmit(submitData);
@@ -112,8 +132,9 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto custom-scrollbar flex-grow">
-          <div className="space-y-6">
+        <div className="overflow-y-auto custom-scrollbar flex-grow">
+          <form id="task-form" onSubmit={handleSubmit} className="p-6">
+            <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Tên công việc <span className="text-red-500">*</span>
@@ -211,12 +232,24 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
                 <select
                   value={formData.sprint}
                   onChange={(e) => setFormData({ ...formData, sprint: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  disabled={
+                    (Array.isArray(sprints) ? sprints : []).some(
+                      (s) => (s.id || s._id) === formData.sprint && s.status === "COMPLETED"
+                    )
+                  }
+                  title={(Array.isArray(sprints) ? sprints : []).some(s => (s.id || s._id) === formData.sprint && s.status === "COMPLETED") ? "Công việc này thuộc Sprint đã hoàn thành, không thể chuyển sang Sprint khác" : ""}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="">-- Backlog (Không thuộc Sprint) --</option>
-                  {(Array.isArray(sprints) ? sprints : []).map((s) => (
+                  {(Array.isArray(sprints) ? sprints : [])
+                    .filter(
+                      (s) =>
+                        s.status !== "COMPLETED" ||
+                        (s.id || s._id) === formData.sprint,
+                    )
+                    .map((s) => (
                     <option key={s.id || s._id} value={(s.id || s._id) as string}>
-                      {s.name}
+                      {s.name} {s.status === "COMPLETED" ? "(Đã hoàn thành)" : ""}
                     </option>
                   ))}
                 </select>
@@ -239,9 +272,89 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   ))}
                 </select>
               </div>
+
+              {/* Task Type */}
+              <div className="flex-1">
+                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Tag className="h-3 w-3" /> Loại công việc
+                </label>
+                <select
+                  value={formData.taskType || ""}
+                  onChange={(e) => setFormData({ ...formData, taskType: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer appearance-none"
+                >
+                  <option value="">(Không có)</option>
+                  {(Array.isArray(taskTypes) ? taskTypes : []).map((t) => (
+                    <option key={t._id || t.id} value={(t._id || t.id) as string}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Labels (Multi-select toggles) */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-3">
+                  Nhãn (Labels)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {labels.map((label) => {
+                    const isSelected = formData.labels.includes(label._id || label.id);
+                    return (
+                      <button
+                        type="button"
+                        key={label._id || label.id}
+                        onClick={() => {
+                          const id = label._id || label.id;
+                          setFormData(prev => ({
+                            ...prev,
+                            labels: isSelected
+                              ? prev.labels.filter(l => l !== id)
+                              : [...prev.labels, id]
+                          }));
+                        }}
+                        className={`group px-3 py-1.5 rounded-xl border text-[13px] font-bold transition-all flex items-center gap-2 ${
+                          isSelected 
+                            ? "bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm shadow-indigo-100" 
+                            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <div 
+                          className="w-2.5 h-2.5 rounded-full" 
+                          style={{ backgroundColor: label.color }}
+                        />
+                        {label.name}
+                        {isSelected && <Check className="h-3.5 w-3.5 ml-1 text-indigo-600" />}
+                      </button>
+                    );
+                  })}
+                  {labels.length === 0 && (
+                    <span className="text-sm text-gray-400 italic">Chưa có nhãn nào trong dự án. Bạn có thể tạo nhãn trên bảng điều khiển.</span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </form>
+
+            </div>
+          </form>
+
+          {/* Integration of Comment Section */}
+          {isEditing && initialData && (
+            <div className="px-6 pb-6">
+              <SubtaskSection 
+                taskId={(initialData.id || initialData._id) as string} 
+                projectId={projectId}
+                onEditSubtask={onEditSubtask}
+              />
+              <AttachmentSection 
+                taskId={(initialData.id || initialData._id) as string} 
+              />
+              <CommentSection 
+                taskId={(initialData.id || initialData._id) as string} 
+              />
+            </div>
+          )}
+        </div>
 
         <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-3xl">
           {isEditing && onDelete ? (
@@ -269,7 +382,8 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
               Hủy
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="task-form"
               disabled={isSubmitting || !formData.title.trim()}
               className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
             >
