@@ -29,6 +29,7 @@ export interface Task {
     name: string;
     color: string;
   }[];
+  parentTask?: string | null;
   taskType?: {
     _id: string;
     name: string;
@@ -51,6 +52,7 @@ export interface CreateTaskDTO {
   sprint?: string | null;
   epic?: string | null;
   labels?: string[];
+  parentTask?: string | null;
 }
 
 export interface UpdateTaskDTO {
@@ -63,4 +65,19 @@ export interface UpdateTaskDTO {
   sprint?: string | null;
   epic?: string | null;
   labels?: string[];
+  parentTask?: string | null;
+}
+
+export interface Attachment {
+  _id: string;
+  task: string;
+  fileName: string;
+  fileUrl: string;
+  uploadedBy: {
+    _id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
 }
