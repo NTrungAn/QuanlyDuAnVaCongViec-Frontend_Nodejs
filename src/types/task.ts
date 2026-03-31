@@ -1,6 +1,24 @@
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
+export interface UserSummary {
+  _id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+export interface TaskLinkedEntity {
+  id?: string;
+  _id?: string;
+  name: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export type TaskEntityRef = string | TaskLinkedEntity | null | undefined;
+
 export interface Task {
   id?: string;
   _id?: string;
@@ -9,21 +27,11 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string;
-  project: string; // Project ID
-  assignee?: {
-    _id: string;
-    fullName: string;
-    email: string;
-    avatarUrl?: string;
-  };
-  creator: {
-    _id: string;
-    fullName: string;
-    email: string;
-    avatarUrl?: string;
-  };
-  sprint?: string | null;
-  epic?: string | null;
+  project: string;
+  assignee?: UserSummary | null;
+  creator: UserSummary;
+  sprint?: TaskEntityRef;
+  epic?: TaskEntityRef;
   labels?: {
     _id: string;
     name: string;
@@ -47,8 +55,8 @@ export interface CreateTaskDTO {
   status?: TaskStatus;
   priority?: TaskPriority;
   dueDate?: string;
-  project: string; // required
-  assignee?: string; // User ID
+  project: string;
+  assignee?: string;
   sprint?: string | null;
   epic?: string | null;
   labels?: string[];
@@ -73,11 +81,6 @@ export interface Attachment {
   task: string;
   fileName: string;
   fileUrl: string;
-  uploadedBy: {
-    _id: string;
-    fullName: string;
-    email: string;
-    avatarUrl?: string;
-  };
+  uploadedBy: UserSummary;
   createdAt: string;
 }
