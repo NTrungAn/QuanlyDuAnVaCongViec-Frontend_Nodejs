@@ -11,7 +11,7 @@ import {
   Search,
   Plus
 } from "lucide-react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
 import TaskBoard from "../components/tasks/TaskBoard";
 import ProjectStatsView from "../components/projects/ProjectStatsView";

@@ -10,7 +10,7 @@ import {
 } from '../api/notification.api';
 import type { NotificationItem } from '../types/notification';
 
-const socketUrl = 'http://localhost:3000';
+const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
 
 const formatTime = (value: string) => {
   try {
