@@ -32,6 +32,8 @@ import SprintManager from "../sprints/SprintManager";
 import EpicManager from "../epics/EpicManager";
 import TaskTypeManager from "./TaskTypeManager";
 import LabelManager from "./LabelManager";
+import WorkflowManager from "./WorkflowManager";
+import { getStatusesByProject } from "../../api/workflow.api";
 
 interface User {
   id?: string;
@@ -47,19 +49,14 @@ interface TaskBoardProps {
 
 type ViewMode = "board" | "backlog";
 
-// Tối ưu màu sắc nền cột nhạt hơn để tập trung vào Card
-const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: "TODO", label: "Cần làm", color: "bg-[#F4F5F7]" },
-  { id: "IN_PROGRESS", label: "Đang làm", color: "bg-[#EAE6FF]" },
-  { id: "REVIEW", label: "Chờ duyệt", color: "bg-[#FFFAE6]" },
-  { id: "DONE", label: "Hoàn thành", color: "bg-[#E3FCEF]" },
-];
+// Xóa hằng số COLUMNS cố định
 
 const getEntityId = (value: any) =>
   String(value?._id || value?.id || value || "");
 
 const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [statuses, setStatuses] = useState<any[]>([]);
   const [sprints, setSprints] = useState<Sprint[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [taskTypes, setTaskTypes] = useState<any[]>([]);
@@ -75,6 +72,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
   const [isEpicManagerOpen, setIsEpicManagerOpen] = useState(false);
   const [isTaskTypeManagerOpen, setIsTaskTypeManagerOpen] = useState(false);
   const [isLabelManagerOpen, setIsLabelManagerOpen] = useState(false);
+  const [isWorkflowManagerOpen, setIsWorkflowManagerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeDefaultEpicId, setActiveDefaultEpicId] = useState<string | null>(
@@ -99,11 +97,21 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
 
   useEffect(() => {
     fetchTasks();
+    fetchStatuses();
     fetchSprints();
     fetchEpics();
     fetchTaskTypes();
     fetchLabels();
   }, [projectId]);
+
+  const fetchStatuses = async () => {
+    try {
+      const data = await getStatusesByProject(projectId);
+      setStatuses(data);
+    } catch (err) {
+      console.error("Không thể tải trạng thái công việc.");
+    }
+  };
 
   const fetchLabels = async () => {
     try {
@@ -424,7 +432,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
         title: quickCreateTitle,
         sprint: sectionId,
         project: projectId,
-        status: "TODO",
+        status: statuses.length > 0 ? statuses[0].name : "Cần làm",
         // Tự động gán Epic nếu đang bật bộ lọc Epic
         epic:
           selectedEpicFilter !== "all" && selectedEpicFilter !== "none"
@@ -673,6 +681,12 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
               Sprints
             </button>
             <button
+              onClick={() => setIsWorkflowManagerOpen(true)}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-semibold rounded-lg border border-slate-200"
+            >
+              Quy trình
+            </button>
+            <button
               onClick={handleOpenCreateModal}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-semibold rounded-lg shadow-sm"
             >
@@ -753,23 +767,24 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
                 </button>
               </div>
             ) : (
-              COLUMNS.map((column) => (
+              statuses.map((column) => (
                 <div
-                  key={column.id}
-                  className={`flex-shrink-0 w-[280px] rounded-lg ${column.color} flex flex-col max-h-[75vh]`}
+                  key={column._id || column.id}
+                  className={`flex-shrink-0 w-[280px] rounded-lg flex flex-col max-h-[75vh]`}
+                  style={{ backgroundColor: column.color || "#F4F5F7" }}
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => handleDropBoard(e, column.id)}
+                  onDrop={(e) => handleDropBoard(e, column.name)}
                 >
                   <div className="px-3 py-2.5 flex items-center justify-between sticky top-0 z-10">
                     <h4 className="font-bold text-[12px] text-gray-700 uppercase tracking-wider">
-                      {column.label}
+                      {column.name}
                     </h4>
                     <span className="bg-white/60 text-gray-600 text-[11px] font-bold px-1.5 rounded-full">
-                      {boardTasks.filter((t) => t.status === column.id).length}
+                      {boardTasks.filter((t) => t.status === column.name).length}
                     </span>
                   </div>
                   <div className="px-2 pb-2 flex-1 overflow-y-auto custom-scrollbar min-h-[150px]">
-                    {boardTasks.filter((t) => t.status === column.id).length ===
+                    {boardTasks.filter((t) => t.status === column.name).length ===
                     0 ? (
                       <div className="text-center py-6 text-[11px] font-medium text-gray-400 border border-dashed border-gray-300/50 rounded-lg mx-1">
                         Thả vào đây
@@ -777,7 +792,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
                     ) : (
                       <div className="space-y-2">
                         {boardTasks
-                          .filter((t) => t.status === column.id)
+                          .filter((t) => t.status === column.name)
                           .map((task) => (
                             <TaskCard
                               key={task.id || task._id}
@@ -929,6 +944,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
         epics={epics}
         taskTypes={taskTypes}
         labels={labels}
+        statuses={statuses}
         isSubmitting={isSubmitting}
         defaultEpicId={activeDefaultEpicId}
         onEditSubtask={handleOpenEditModal}
@@ -957,6 +973,16 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
         isOpen={isLabelManagerOpen}
         onClose={() => setIsLabelManagerOpen(false)}
         onLabelsChange={fetchLabels}
+      />
+
+      <WorkflowManager
+        projectId={projectId}
+        isOpen={isWorkflowManagerOpen}
+        onClose={() => setIsWorkflowManagerOpen(false)}
+        onWorkflowChange={() => {
+          fetchStatuses();
+          fetchTasks(); // Reload tasks just in case status names changed
+        }}
       />
     </div>
   );

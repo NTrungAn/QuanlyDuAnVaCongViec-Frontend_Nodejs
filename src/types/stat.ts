@@ -17,12 +17,8 @@ export interface DashboardStats {
 export interface ProjectStats {
   projectName: string;
   totalTasks: number;
-  statusCounts: {
-    TODO: number;
-    IN_PROGRESS: number;
-    REVIEW: number;
-    DONE: number;
-  };
+  statusCounts: Record<string, number>;
+  statuses?: any[]; // Danh sách TaskStatus gốc
   priorityCounts: {
     LOW: number;
     MEDIUM: number;
@@ -38,12 +34,7 @@ export interface MemberPerformance {
   fullName: string;
   email: string;
   totalTasks: number;
-  statusCounts: {
-    TODO: number;
-    IN_PROGRESS: number;
-    REVIEW: number;
-    DONE: number;
-  };
+  statusCounts: Record<string, number>;
   completionRate: number;
 }
 

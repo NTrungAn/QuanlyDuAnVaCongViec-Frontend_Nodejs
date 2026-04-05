@@ -15,6 +15,7 @@ import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
 import TaskBoard from "../components/tasks/TaskBoard";
 import ProjectStatsView from "../components/projects/ProjectStatsView";
+import { getAvatarUrl } from "../utils/url.util";
 
 interface User {
   id: string;
@@ -78,7 +79,7 @@ const ProjectDetailPage: React.FC = () => {
   const currentUserId = String(currentUser?.id || currentUser?._id || "");
   const projectOwnerId = String(
     project?.owner?.id ||
-      (typeof project?.owner === "string" ? project.owner : ""),
+    (typeof project?.owner === "string" ? project.owner : ""),
   );
 
   const isOwner = !!(
@@ -230,21 +231,19 @@ const ProjectDetailPage: React.FC = () => {
           <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
             <button
               onClick={() => setActiveTab("board")}
-              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${
-                activeTab === "board"
+              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${activeTab === "board"
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
-              }`}
+                }`}
             >
               Bảng công việc
             </button>
             <button
               onClick={() => setActiveTab("stats")}
-              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${
-                activeTab === "stats"
+              className={`px-6 py-2 rounded-lg text-sm font-black transition-all ${activeTab === "stats"
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
-              }`}
+                }`}
             >
               Thống kê & Báo cáo
             </button>
@@ -282,9 +281,9 @@ const ProjectDetailPage: React.FC = () => {
                   <p className="text-sm font-bold text-gray-900">
                     {project.startDate
                       ? new Date(project.startDate).toLocaleDateString(
-                          "vi-VN",
-                          { dateStyle: "long" },
-                        )
+                        "vi-VN",
+                        { dateStyle: "long" },
+                      )
                       : "Chưa xác định"}
                   </p>
                 </div>
@@ -300,8 +299,8 @@ const ProjectDetailPage: React.FC = () => {
                   <p className="text-sm font-bold text-gray-900">
                     {project.endDate
                       ? new Date(project.endDate).toLocaleDateString("vi-VN", {
-                          dateStyle: "long",
-                        })
+                        dateStyle: "long",
+                      })
                       : "Chưa xác định"}
                   </p>
                 </div>
@@ -388,10 +387,14 @@ const ProjectDetailPage: React.FC = () => {
                     className="flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                        <span className="text-gray-500 font-bold text-[10px] uppercase">
-                          {member.fullName?.substring(0, 2)}
-                        </span>
+                      <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                        {member.avatarUrl ? (
+                          <img src={getAvatarUrl(member.avatarUrl)!} alt={member.fullName} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-gray-500 font-bold text-[10px] uppercase">
+                            {member.fullName?.substring(0, 2)}
+                          </span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[13px] font-bold text-gray-900 truncate">

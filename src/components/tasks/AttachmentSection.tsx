@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Paperclip, Loader2, Trash2, File } from "lucide-react";
 import { Attachment } from "../../types/task";
 import { getAttachments, uploadAttachment, deleteAttachment } from "../../api/task.api";
+import { BASE_URL } from "../../api/axios";
 
 interface AttachmentSectionProps {
   taskId: string;
@@ -63,8 +64,7 @@ const AttachmentSection: React.FC<AttachmentSectionProps> = ({ taskId }) => {
 
   const getFullUrl = (url: string) => {
     if (url.startsWith('http')) return url;
-    const baseUrl = "http://localhost:3000";
-    return `${baseUrl}${url}`;
+    return `${BASE_URL}${url}`;
   };
 
   const isImage = (fileName: string) => {

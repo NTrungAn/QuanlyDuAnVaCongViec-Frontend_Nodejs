@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getMe, updateUser, uploadAvatar } from "../api/user.api";
 import { User } from "../types/user";
+import { getAvatarUrl } from "../utils/url.util";
 
 const ProfilePage: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +24,8 @@ const ProfilePage: React.FC = () => {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const avatarUrl = getAvatarUrl(user?.avatarUrl);
 
   useEffect(() => {
     fetchProfile();
@@ -129,8 +132,8 @@ const ProfilePage: React.FC = () => {
         <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
           <div className="relative group">
             <div className="h-32 w-32 rounded-full overflow-hidden border-4 border-blue-50 shadow-inner bg-gray-50 flex items-center justify-center">
-              {user.avatarUrl ? (
-                <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full object-cover" />
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={user.fullName} className="h-full w-full object-cover" />
               ) : (
                 <UserIcon className="h-16 w-16 text-gray-300" />
               )}
