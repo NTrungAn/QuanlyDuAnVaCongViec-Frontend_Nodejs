@@ -106,10 +106,22 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
 
   const fetchStatuses = async () => {
     try {
-      const data = await getStatusesByProject(projectId);
+      let data = await getStatusesByProject(projectId);
+      data = (data || []).slice().sort((a: any, b: any) => {
+        const ao =
+          typeof a.order === "number" ? a.order : Number.MAX_SAFE_INTEGER;
+        const bo =
+          typeof b.order === "number" ? b.order : Number.MAX_SAFE_INTEGER;
+        if (ao !== bo) return ao - bo;
+        if (a.createdAt && b.createdAt)
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        return (a.name || "").localeCompare(b.name || "");
+      });
       setStatuses(data);
     } catch (err) {
-      console.error("Không thể tải trạng thái công việc.");
+      console.error("Không thể tải trạng thái công việc.", err);
     }
   };
 
@@ -265,7 +277,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
       setIsModalOpen(false);
       fetchTasks();
     } catch (error: any) {
-      alert("Đã có lỗi xảy ra. Kiểm tra lại dữ liệu.");
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Đã có lỗi xảy ra. Kiểm tra lại dữ liệu.";
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -335,7 +351,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
       await updateTask(taskId, { status: newStatus });
     } catch (error) {
       setTasks(previousTasks);
-      alert("Lỗi chuyển trạng thái.");
+      const msg =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.message ||
+        "Lỗi chuyển trạng thái.";
+      alert(msg);
     }
   };
 
@@ -359,14 +379,18 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     if (currentSprintId === targetSprintId) return;
 
     if (currentSprintId) {
-      const currentSprint = sprints.find((s) => (s.id || s._id) === currentSprintId);
+      const currentSprint = sprints.find(
+        (s) => (s.id || s._id) === currentSprintId,
+      );
       if (currentSprint && currentSprint.status === "COMPLETED") {
         alert("Không thể chuyển công việc ra khỏi Sprint đã hoàn thành.");
         return;
       }
     }
 
-    const targetSprint = sprints.find((s) => (s.id || s._id) === targetSprintId);
+    const targetSprint = sprints.find(
+      (s) => (s.id || s._id) === targetSprintId,
+    );
     if (targetSprint && targetSprint.status === "COMPLETED") {
       alert("Không thể chuyển công việc vào Sprint đã hoàn thành.");
       return;
@@ -442,9 +466,11 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
       setQuickCreateTitle("");
       fetchTasks();
     } catch (error) {
-      alert(
-        "Không thể thêm nhanh công việc. Vui lòng thử dùng nút thêm chi tiết.",
-      );
+      const msg =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.message ||
+        "Không thể thêm nhanh công việc. Vui lòng thử dùng nút thêm chi tiết.";
+      alert(msg);
     } finally {
       setIsQuickCreating(false);
     }
@@ -780,12 +806,15 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
                       {column.name}
                     </h4>
                     <span className="bg-white/60 text-gray-600 text-[11px] font-bold px-1.5 rounded-full">
-                      {boardTasks.filter((t) => t.status === column.name).length}
+                      {
+                        boardTasks.filter((t) => t.status === column.name)
+                          .length
+                      }
                     </span>
                   </div>
                   <div className="px-2 pb-2 flex-1 overflow-y-auto custom-scrollbar min-h-[150px]">
-                    {boardTasks.filter((t) => t.status === column.name).length ===
-                    0 ? (
+                    {boardTasks.filter((t) => t.status === column.name)
+                      .length === 0 ? (
                       <div className="text-center py-6 text-[11px] font-medium text-gray-400 border border-dashed border-gray-300/50 rounded-lg mx-1">
                         Thả vào đây
                       </div>
