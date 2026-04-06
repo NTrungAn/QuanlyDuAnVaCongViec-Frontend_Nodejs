@@ -23,6 +23,7 @@ import {
   updateTask,
   deleteTask,
 } from "../../api/task.api";
+import { getMe } from "../../api/user.api";
 import { getSprintsByProject, updateSprint } from "../../api/sprint.api";
 import { getEpicsByProject } from "../../api/epic.api";
 import { getTaskTypesByProject } from "../../api/taskType.api";
@@ -89,6 +90,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
   >(null);
   const [quickCreateTitle, setQuickCreateTitle] = useState("");
   const [isQuickCreating, setIsQuickCreating] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // State lưu trữ trạng thái Đóng/Mở của các Section (Sprint/Backlog)
   const [collapsedSections, setCollapsedSections] = useState<
@@ -103,6 +105,19 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     fetchTaskTypes();
     fetchLabels();
   }, [projectId]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const me = await getMe();
+        if (mounted) setCurrentUser(me);
+      } catch (err) {}
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const fetchStatuses = async () => {
     try {
@@ -332,6 +347,21 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     e.dataTransfer.setData("taskId_board", (task.id || task._id) as string);
   };
 
+  const canDrag = (task: Task) => {
+    const uid =
+      (currentUser && (currentUser._id || (currentUser as any).id)) || null;
+    if (!uid) return false;
+    const assigneeId =
+      (task.assignee as any)?._id ||
+      (task.assignee as any)?.id ||
+      task.assignee;
+    const creatorId =
+      (task.creator as any)?._id || (task.creator as any)?.id || task.creator;
+    return (
+      String(uid) === String(assigneeId) || String(uid) === String(creatorId)
+    );
+  };
+
   const handleDropBoard = async (e: React.DragEvent, newStatus: TaskStatus) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData("taskId_board");
@@ -348,7 +378,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     );
 
     try {
-      await updateTask(taskId, { status: newStatus });
+      await updateTask(taskId, { status: newStatus, viaDrag: true } as any);
     } catch (error) {
       setTasks(previousTasks);
       const msg =
@@ -404,7 +434,10 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     );
 
     try {
-      await updateTask(taskId, { sprint: targetSprintId });
+      await updateTask(taskId, {
+        sprint: targetSprintId,
+        viaDrag: true,
+      } as any);
       fetchTasks();
     } catch (error) {
       setTasks(previousTasks);
@@ -436,7 +469,7 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
     );
 
     try {
-      await updateTask(taskId, { epic: targetEpicId });
+      await updateTask(taskId, { epic: targetEpicId, viaDrag: true } as any);
       fetchTasks();
     } catch (error) {
       setTasks(previousTasks);
@@ -595,7 +628,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
                     <TaskCard
                       task={task}
                       onClick={handleOpenEditModal}
-                      onDragStart={handleDragStartBacklog}
+                      onDragStart={
+                        canDrag(task) ? handleDragStartBacklog : undefined
+                      }
                     />
                   </div>
                 ))}
@@ -827,7 +862,9 @@ const TaskBoard: React.FC<TaskBoardProps> = ({ projectId, projectMembers }) => {
                               key={task.id || task._id}
                               task={task}
                               onClick={handleOpenEditModal}
-                              onDragStart={handleDragStartBoard}
+                              onDragStart={
+                                canDrag(task) ? handleDragStartBoard : undefined
+                              }
                             />
                           ))}
                       </div>
