@@ -135,7 +135,7 @@ const AdminPage: React.FC = () => {
                   </td>
                   <td className="px-8 py-5">
                     <div className="flex flex-wrap justify-center gap-1.5">
-                      {["USER", "MANAGER", "ADMIN"].map(role => (
+                      {["USER", "ADMIN"].map(role => (
                         <button
                           key={role}
                           onClick={() => handleRoleChange(u.id, u.roles, role)}
