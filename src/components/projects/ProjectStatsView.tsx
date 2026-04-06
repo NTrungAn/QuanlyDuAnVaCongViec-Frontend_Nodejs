@@ -153,18 +153,38 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
   }, [projectId]);
 
   const summaryMetrics = useMemo(() => {
-    const completedRecently = tasks.filter((task) => task.status === 'DONE' && (daysAgo(task.updatedAt) ?? Infinity) <= range).length;
+    const doneStatusNames = (projectStats?.statuses || [])
+      .filter(s => s.category === 'DONE')
+      .map(s => s.name);
+      
+    const isDone = (status: string) => doneStatusNames.includes(status);
+
+    const completedRecently = tasks.filter((task) => isDone(task.status) && (daysAgo(task.updatedAt) ?? Infinity) <= range).length;
     const updatedRecently = tasks.filter((task) => (daysAgo(task.updatedAt) ?? Infinity) <= range).length;
     const createdRecently = tasks.filter((task) => (daysAgo(task.createdAt) ?? Infinity) <= range).length;
-    const dueSoon = tasks.filter((task) => task.status !== 'DONE' && isWithinDays(task.dueDate, 7)).length;
-    const overdue = tasks.filter((task) => task.status !== 'DONE' && task.dueDate && new Date(task.dueDate) < new Date()).length;
+    const dueSoon = tasks.filter((task) => !isDone(task.status) && isWithinDays(task.dueDate, 7)).length;
+    const overdue = tasks.filter((task) => !isDone(task.status) && task.dueDate && new Date(task.dueDate) < new Date()).length;
     return { completedRecently, updatedRecently, createdRecently, dueSoon, overdue };
-  }, [tasks, range]);
+  }, [tasks, range, projectStats]);
 
   const statusSegments = useMemo(() => {
-    if (!projectStats) return [] as Array<{ key: keyof typeof STATUS_META; value: number }>;
+    if (!projectStats) return [];
+    
+    // Nếu có danh sách statuses đính kèm, dùng nó để map
+    if (projectStats?.statuses && projectStats.statuses.length > 0) {
+      return projectStats.statuses.map(s => ({
+        key: s.name,
+        label: s.name,
+        color: s.color || "#CBD5E1",
+        value: (projectStats.statusCounts as any)[s.name] || 0
+      }));
+    }
+
+    // Fallback sang STATUS_META nếu không có metadata từ backend
     return (Object.keys(STATUS_META) as Array<keyof typeof STATUS_META>).map((key) => ({
       key,
+      label: STATUS_META[key].label,
+      color: STATUS_META[key].color,
       value: projectStats.statusCounts[key] || 0,
     }));
   }, [projectStats]);
@@ -174,11 +194,11 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
       return 'conic-gradient(#E5E7EB 0 360deg)';
     }
     let current = 0;
-    const parts = statusSegments.map(({ key, value }) => {
+    const parts = statusSegments.map(({ color, value }) => {
       const percent = (value / projectStats.totalTasks) * 100;
       const start = current;
       current += percent;
-      return `${STATUS_META[key].color} ${start}% ${current}%`;
+      return `${color} ${start}% ${current}%`;
     });
     return `conic-gradient(${parts.join(', ')})`;
   }, [projectStats, statusSegments]);
@@ -207,7 +227,12 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
     return epics.map((epic) => {
       const epicId = epic.id || epic._id || '';
       const epicTasks = tasks.filter((task) => getEntityId(task.epic) === epicId);
-      const done = epicTasks.filter((task) => task.status === 'DONE').length;
+      const doneStatusNames = (projectStats?.statuses || [])
+        .filter(s => s.category === 'DONE')
+        .map(s => s.name);
+      const isDone = (status: string) => doneStatusNames.includes(status);
+
+      const done = epicTasks.filter((task) => isDone(task.status)).length;
       const progress = epicTasks.length ? Math.round((done / epicTasks.length) * 100) : 0;
       return {
         id: epicId,
@@ -217,7 +242,7 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
         progress,
       };
     }).sort((a, b) => b.total - a.total);
-  }, [epics, tasks]);
+  }, [epics, tasks, projectStats]);
 
   const teamWorkload = useMemo(() => {
     if (!performance) return [];
@@ -233,11 +258,16 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
   const recentActivity = useMemo(() => {
     const taskActivities = tasks
       .filter((task) => (daysAgo(task.updatedAt) ?? Infinity) <= range)
-      .map((task) => ({
-        id: task.id || task._id || task.title,
-        text: `Task \"${task.title}\" được cập nhật sang trạng thái ${STATUS_META[task.status].label}`,
-        when: task.updatedAt || task.createdAt || new Date().toISOString(),
-      }));
+      .map((task) => {
+        const meta = statusSegments.find(s => s.key === task.status) || 
+                    (STATUS_META as any)[task.status] || 
+                    { label: task.status };
+        return {
+          id: task.id || task._id || task.title,
+          text: `Task \"${task.title}\" được cập nhật sang trạng thái ${meta.label || task.status}`,
+          when: task.updatedAt || task.createdAt || new Date().toISOString(),
+        };
+      });
 
     const notificationActivities = notifications.map((item) => ({
       id: item.id,
@@ -393,13 +423,12 @@ const ProjectStatsView: React.FC<ProjectStatsViewProps> = ({ projectId }) => {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    {statusSegments.map(({ key, value }) => {
-                      const meta = STATUS_META[key];
+                    {statusSegments.map(({ key, label, color, value }) => {
                       return (
                         <div key={key} className="flex items-center justify-between rounded-2xl border border-gray-100 px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: meta.color }} />
-                            <span className="text-sm font-bold text-gray-700">{meta.label}</span>
+                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+                            <span className="text-sm font-bold text-gray-700">{label}</span>
                           </div>
                           <div className="text-right">
                             <div className="text-sm font-black text-gray-900">{value}</div>

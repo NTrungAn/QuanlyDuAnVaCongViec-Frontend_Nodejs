@@ -2,10 +2,12 @@ import React from "react";
 import { LogOut, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
+import { getAvatarUrl } from "../utils/url.util";
 
 const Header: React.FC = () => {
   const userJson = localStorage.getItem("user");
   const user = userJson ? JSON.parse(userJson) : null;
+  const avatarUrl = getAvatarUrl(user?.avatarUrl);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -27,8 +29,12 @@ const Header: React.FC = () => {
               to="/profile"
               className="flex items-center gap-2.5 group hover:bg-slate-50 p-1.5 pr-4 rounded-xl transition-all border border-transparent hover:border-slate-100"
             >
-              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 p-2 rounded-lg group-hover:from-blue-600 group-hover:to-indigo-600 transition-colors shadow-sm">
-                <User className="h-4 w-4 text-blue-700 group-hover:text-white" />
+              <div className="bg-gradient-to-br from-blue-100 to-indigo-100 p-0 rounded-lg group-hover:from-blue-600 group-hover:to-indigo-600 transition-colors shadow-sm overflow-hidden h-8 w-8 flex items-center justify-center">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={user?.fullName} className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-4 w-4 text-blue-700 group-hover:text-white" />
+                )}
               </div>
               <div className="text-left hidden lg:block">
                 <p className="text-sm font-bold text-slate-900 leading-none">

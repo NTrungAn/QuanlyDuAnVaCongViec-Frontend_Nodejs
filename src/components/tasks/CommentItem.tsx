@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { Comment } from "../../types/comment";
+import { getAvatarUrl } from "../../utils/url.util";
 
 interface CommentItemProps {
   comment: Comment;
@@ -8,12 +9,14 @@ interface CommentItemProps {
 }
 
 const CommentItem: React.FC<CommentItemProps> = ({ comment, onDelete, isOwner }) => {
+  const avatarUrl = getAvatarUrl(comment.user.avatarUrl);
+
   return (
     <div className="flex gap-3 py-3 group">
-      <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-        {comment.user.avatarUrl ? (
+      <div className="h-8 w-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
+        {avatarUrl ? (
           <img
-            src={comment.user.avatarUrl}
+            src={avatarUrl}
             alt={comment.user.fullName}
             className="h-full w-full rounded-full object-cover"
           />

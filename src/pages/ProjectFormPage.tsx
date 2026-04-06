@@ -67,7 +67,12 @@ const ProjectFormPage: React.FC = () => {
       setSuccess(true);
       setTimeout(() => navigate("/projects"), 1500);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Đã xảy ra lỗi khi lưu dự án.");
+      const data = err.response?.data;
+      if (data?.errors && Array.isArray(data.errors)) {
+        setError(data.errors.join(", "));
+      } else {
+        setError(data?.message || "Đã xảy ra lỗi khi lưu dự án.");
+      }
     } finally {
       setLoading(false);
     }

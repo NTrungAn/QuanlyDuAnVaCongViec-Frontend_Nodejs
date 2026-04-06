@@ -27,6 +27,7 @@ interface TaskFormModalProps {
   epics: Epic[];
   taskTypes: TaskType[];
   labels: any[];
+  statuses: any[];
   isSubmitting: boolean;
   defaultEpicId?: string | null;
   onEditSubtask?: (task: Task) => void;
@@ -44,6 +45,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   epics,
   taskTypes,
   labels,
+  statuses,
   isSubmitting,
   defaultEpicId,
   onEditSubtask
@@ -51,7 +53,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    status: "TODO" as TaskStatus,
+    status: (statuses && statuses.length > 0 ? statuses[0].name : "") as TaskStatus,
     priority: "MEDIUM" as TaskPriority,
     dueDate: "",
     assignee: "",
@@ -80,7 +82,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setFormData({
         title: "",
         description: "",
-        status: "TODO",
+        status: (statuses && statuses.length > 0 ? statuses[0].name : ""),
         priority: "MEDIUM",
         dueDate: "",
         assignee: "",
@@ -172,10 +174,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 >
-                  <option value="TODO">Lập kế hoạch</option>
-                  <option value="IN_PROGRESS">Đang thực hiện</option>
-                  <option value="REVIEW">Chờ duyệt</option>
-                  <option value="DONE">Hoàn thành</option>
+                  {(statuses || []).map((s) => (
+                    <option key={s._id || s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
